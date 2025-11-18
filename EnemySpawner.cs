@@ -3,14 +3,21 @@ using UnityEngine;
 public class EnemySpawner : MonoBehaviour
 {
     public GameObject enemyPrefab; // Prefab de l'ennemi à instancier
-    public Transform[] spawnPoints; // Points de spawn possibles pour les ennemis
-    public float spawnInterval = 5f; // Intervalle de temps entre les spawns
+    public float spawnInterval = 1f; // Intervalle de temps entre les spawns
 
+    private Transform[] spawnPoints; // Points de spawn aux extrémités du carré
     private float timer;
 
     // Start est appelé une fois avant la première exécution de Update
     void Start()
     {
+        // Initialisation des points de spawn aux extrémités d'un carré 10x10
+        spawnPoints = new Transform[4];
+        spawnPoints[0] = CreateSpawnPoint(new Vector3(-10, 2, -10)); // Coin inférieur gauche
+        spawnPoints[1] = CreateSpawnPoint(new Vector3(-10, 2, 10));  // Coin supérieur gauche
+        spawnPoints[2] = CreateSpawnPoint(new Vector3(10, 2, -10));  // Coin inférieur droit
+        spawnPoints[3] = CreateSpawnPoint(new Vector3(10, 2, 10));   // Coin supérieur droit
+
         timer = spawnInterval;
     }
 
@@ -38,5 +45,13 @@ public class EnemySpawner : MonoBehaviour
         Transform spawnPoint = spawnPoints[randomIndex];
 
         Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
+    }
+
+    private Transform CreateSpawnPoint(Vector3 position)
+    {
+        GameObject spawnPointObject = new GameObject("SpawnPoint");
+        spawnPointObject.transform.position = position;
+        spawnPointObject.transform.parent = transform; // Optionnel : pour organiser les points sous l'objet parent
+        return spawnPointObject.transform;
     }
 }
