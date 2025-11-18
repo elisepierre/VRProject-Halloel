@@ -2,21 +2,23 @@ using UnityEngine;
 
 public class EnemySpawner : MonoBehaviour
 {
-    public GameObject enemyPrefab; 
+    public GameObject enemyPrefab;
     public float spawnInterval = 1f;
 
-    public Transform player; // <--- LE JOUEUR À ASSIGNER
-
+    private Transform player;   // récupéré automatiquement
     private Transform[] spawnPoints;
     private float timer;
 
     void Start()
     {
+        // Trouver le joueur automatiquement
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+
         spawnPoints = new Transform[4];
-        spawnPoints[0] = CreateSpawnPoint(new Vector3(-10, 2, -10));
-        spawnPoints[1] = CreateSpawnPoint(new Vector3(-10, 2, 10));
-        spawnPoints[2] = CreateSpawnPoint(new Vector3(10, 2, -10));
-        spawnPoints[3] = CreateSpawnPoint(new Vector3(10, 2, 10));
+        spawnPoints[0] = CreateSpawnPoint(new Vector3(-10, 1, -10));
+        spawnPoints[1] = CreateSpawnPoint(new Vector3(-10, 1, 10));
+        spawnPoints[2] = CreateSpawnPoint(new Vector3(10, 1, -10));
+        spawnPoints[3] = CreateSpawnPoint(new Vector3(10, 1, 10));
 
         timer = spawnInterval;
     }
@@ -34,12 +36,12 @@ public class EnemySpawner : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        int randomIndex = Random.Range(0, spawnPoints.Length);
-        Transform spawnPoint = spawnPoints[randomIndex];
+        int index = Random.Range(0, spawnPoints.Length);
+        Transform spawnPoint = spawnPoints[index];
 
         GameObject newEnemy = Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
 
-        // ⭐⭐ ASSIGNATION AUTOMATIQUE DU PLAYER ⭐⭐
+        // Donner le player à l'ennemi
         Enemy e = newEnemy.GetComponent<Enemy>();
         if (e != null)
         {
@@ -49,9 +51,8 @@ public class EnemySpawner : MonoBehaviour
 
     private Transform CreateSpawnPoint(Vector3 position)
     {
-        GameObject spawnPointObject = new GameObject("SpawnPoint");
-        spawnPointObject.transform.position = position;
-        spawnPointObject.transform.parent = transform;
-        return spawnPointObject.transform;
+        GameObject obj = new GameObject("SpawnPoint");
+        obj.transform.position = position;
+        return obj.transform;
     }
 }
