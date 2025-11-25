@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    [Header("Camera")] [SerializeField] private Camera cam;
+    [Header("Camera")][SerializeField] private Camera cam;
     [Header("Movement")]
     [SerializeField] private float camSensitivity;
     [SerializeField] private float moveSensitivity;
@@ -15,7 +15,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private InputActionReference mouseMovement;
     [SerializeField] private InputActionReference fire;
     [SerializeField] private InputActionReference jump;
-    
+
     [Header("GroundCheck")]
     [SerializeField] private float groundCheckDistance;
     [SerializeField] private LayerMask groundCheckMask;
@@ -24,7 +24,7 @@ public class PlayerController : MonoBehaviour
     private float rotationX = 0.0f;
     private bool isGrounded = false;
     private Vector3 velocity = Vector3.zero;
-    
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -57,7 +57,8 @@ public class PlayerController : MonoBehaviour
 
     private void FirePressed(InputAction.CallbackContext obj)
     {
-        weapon.Shoot();
+        if (weapon != null)
+            weapon.Shoot();
     }
 
 
@@ -70,7 +71,7 @@ public class PlayerController : MonoBehaviour
         {
             velocity.y = -2f;
         }
-        
+
         float mouseX = mouseMovement.action.ReadValue<Vector2>().x * camSensitivity * Time.deltaTime;
         float mouseY = mouseMovement.action.ReadValue<Vector2>().y * camSensitivity * Time.deltaTime;
 
@@ -78,10 +79,10 @@ public class PlayerController : MonoBehaviour
         rotationX = Mathf.Clamp(rotationX, -90f, 90f);
         cam.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
         transform.Rotate(Vector3.up * mouseX);
-        
+
         Vector2 zqsdValue = zqsd.action.ReadValue<Vector2>();
         controller.Move(transform.TransformDirection(new Vector3(zqsdValue.x, 0, zqsdValue.y)).normalized * moveSensitivity * Time.deltaTime);
-        
+
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
