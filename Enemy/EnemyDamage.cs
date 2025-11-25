@@ -1,16 +1,23 @@
 using UnityEngine;
 
-public class EnemyDamage : MonoBehaviour
+public class Enemy : MonoBehaviour
 {
-    public float damagePerSecond = 10f;
+    public Transform player;
+    public float speed = 5f;
+    public int health = 3;
 
-    private void OnTriggerStay(Collider other)
+    void Update()
     {
-        if (other.CompareTag("Player"))
-        {
-            Health h = other.GetComponent<Health>();
-            if (h != null)
-                h.TakeDamage(damagePerSecond * Time.deltaTime);
-        }
+        if (player == null) return;
+
+        Vector3 direction = (player.position - transform.position).normalized;
+        transform.position += direction * speed * Time.deltaTime;
+    }
+
+    public void TakeDamage(int amount)
+    {
+        health -= amount;
+        if (health <= 0)
+            Destroy(gameObject);
     }
 }
