@@ -20,10 +20,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float groundCheckDistance;
     [SerializeField] private LayerMask groundCheckMask;
 
+    [Header("Jump")]
+    [SerializeField] private float jumpHeight = 3f;
+
     private CharacterController controller;
     private float rotationX = 0.0f;
     private bool isGrounded = false;
     private Vector3 velocity = Vector3.zero;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -61,6 +65,28 @@ public class PlayerController : MonoBehaviour
             weapon.Shoot();
     }
 
+    private void Awake()
+    {
+        if (weapon == null)
+        {
+            weapon = GetComponentInChildren<WeaponRaycast>();
+            if (weapon == null)
+            {
+                Debug.LogWarning("No WeaponRaycast found on player or its children.");
+            }
+        }
+
+        if (fire == null)
+        {
+           fire.action.performed += FirePressed;
+           fire.action.Enable();
+        }
+        else
+        {
+            Debug.LogWarning("Fire InputActionReference is not assigned.");
+        }
+    }
+
 
     // Update is called once per frame
     void Update()
@@ -72,6 +98,7 @@ public class PlayerController : MonoBehaviour
             velocity.y = -2f;
         }
 
+        //Rotation
         float mouseX = mouseMovement.action.ReadValue<Vector2>().x * camSensitivity * Time.deltaTime;
         float mouseY = mouseMovement.action.ReadValue<Vector2>().y * camSensitivity * Time.deltaTime;
 
@@ -80,9 +107,18 @@ public class PlayerController : MonoBehaviour
         cam.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
         transform.Rotate(Vector3.up * mouseX);
 
+        //Déplacement
         Vector2 zqsdValue = zqsd.action.ReadValue<Vector2>();
-        controller.Move(transform.TransformDirection(new Vector3(zqsdValue.x, 0, zqsdValue.y)).normalized * moveSensitivity * Time.deltaTime);
+        Vector3 move = transform.TransformDirection(new Vector3(zqsdValue.x, 0, zqsdValue.y));
+        controller.Move(move * moveSensitivity * Time.deltaTime);
 
+        //Jump
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+
+        //Gravité
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
