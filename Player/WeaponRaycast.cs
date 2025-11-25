@@ -2,21 +2,30 @@ using UnityEngine;
 
 public class WeaponRaycast : MonoBehaviour
 {
-    public Camera cam;
-    public float damage = 20f;
-    public float range = 100f;
+    public Camera playerCamera;
+    public float range = 50f;
+    public int damage = 1;
+
+    // Optionnel : effet de tir
+    public ParticleSystem muzzleFlash;
 
     public void Shoot()
     {
-        Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f));
+        if (muzzleFlash != null)
+            muzzleFlash.Play();
+
         RaycastHit hit;
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
         if (Physics.Raycast(ray, out hit, range))
         {
-            Health h = hit.collider.GetComponent<Health>();
-            if (h != null)
+            Debug.Log("Hit : " + hit.collider.name);
+
+            // Si l'objet a un script Enemy
+            Enemy enemy = hit.collider.GetComponent<Enemy>();
+            if (enemy != null)
             {
-                h.TakeDamage(damage);
+                enemy.TakeDamage(damage);
             }
         }
     }
