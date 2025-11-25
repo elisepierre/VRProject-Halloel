@@ -1,63 +1,68 @@
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    [Header("Camera")][SerializeField] private Camera cam;
+    [Header("Camera")]
+    [SerializeField] private Camera cam;
+
     [Header("Movement")]
-    [SerializeField] private float camSensitivity;
-    [SerializeField] private float moveSensitivity;
+    [SerializeField] private float camSensitivity = 150f;
+    [SerializeField] private float moveSensitivity = 7f;
     [SerializeField] private float gravity = -9.81f;
 
     [Header("Inputs")]
     [SerializeField] private InputActionReference zqsd;
     [SerializeField] private InputActionReference mouseMovement;
     [SerializeField] private InputActionReference fire;
-    [SerializeField] private InputActionReference jump;
-
-    [Header("GroundCheck")]
-    [SerializeField] private float groundCheckDistance;
-    [SerializeField] private LayerMask groundCheckMask;
 
     [Header("Jump")]
     [SerializeField] private float jumpHeight = 3f;
 
+    [Header("GroundCheck")]
+    [SerializeField] private Transform groundCheckPoint;
+    [SerializeField] private float groundCheckRadius = 0.3f;
+    [SerializeField] private LayerMask groundCheckMask;
+
     private CharacterController controller;
-    private float rotationX = 0.0f;
+    private float rotationX = 0f;
     private bool isGrounded = false;
     private Vector3 velocity = Vector3.zero;
 
+    [Header("Weapon")]
+    public WeaponRaycast weapon;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+
+    // INITIALISATION -------------------------------------------------------------
+
+    private void Awake()
     {
-        if (zqsd)
-        {
-            zqsd.action.Enable();
-        }
+        controller = GetComponent<CharacterController>();
 
-        if (mouseMovement)
+        if (weapon == null)
         {
-            mouseMovement.action.Enable();
+            weapon = GetComponentInChildren<WeaponRaycast>();
+            if (weapon == null)
+                Debug.LogWarning("⚠️ No WeaponRaycast found on player.");
         }
+    }
 
-        if (jump)
-        {
-            jump.action.Enable();
-        }
-
+    private void Start()
+    {
+        // Enable Input System actions
+        if (zqsd) zqsd.action.Enable();
+        if (mouseMovement) mouseMovement.action.Enable();
         if (fire)
         {
             fire.action.performed += FirePressed;
             fire.action.Enable();
         }
 
-        controller = GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
     }
 
-    public WeaponRaycast weapon;
+
+    // SHOOT ----------------------------------------------------------------------
 
     private void FirePressed(InputAction.CallbackContext obj)
     {
@@ -65,61 +70,89 @@ public class PlayerController : MonoBehaviour
             weapon.Shoot();
     }
 
-    private void Awake()
-    {
-        if (weapon == null)
-        {
-            weapon = GetComponentInChildren<WeaponRaycast>();
-            if (weapon == null)
-            {
-                Debug.LogWarning("No WeaponRaycast found on player or its children.");
-            }
-        }
 
-        if (fire == null)
+    // UPDATE ---------------------------------------------------------------------
+
+    private void Update()
+    {
+        GroundCheck();
+        CameraRotation();
+        Movement();
+        Jump();
+        Gravity();
+    }
+
+
+    // GROUND CHECK ---------------------------------------------------------------
+
+    private void GroundCheck()
+    {
+        isGrounded = Physics.CheckSphere(
+            groundCheckPoint.position,
+            groundCheckRadius,
+            groundCheckMask
+        );
+
+        if (isGrounded && velocity.y < 0)
+            velocity.y = -2f; // "stick to floor"
+    }
+
+
+    // CAMERA + MOUSE -------------------------------------------------------------
+
+    private void CameraRotation()
+    {
+        Vector2 mouse = mouseMovement.action.ReadValue<Vector2>();
+
+        float mouseX = mouse.x * camSensitivity * Time.deltaTime;
+        float mouseY = mouse.y * camSensitivity * Time.deltaTime;
+
+        rotationX -= mouseY;
+        rotationX = Mathf.Clamp(rotationX, -90f, 90f);
+
+        cam.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
+        transform.Rotate(Vector3.up * mouseX);
+    }
+
+
+    // MOVEMENT -------------------------------------------------------------------
+
+    private void Movement()
+    {
+        Vector2 input = zqsd.action.ReadValue<Vector2>();
+
+        Vector3 move = transform.TransformDirection(new Vector3(input.x, 0, input.y));
+        controller.Move(move * moveSensitivity * Time.deltaTime);
+    }
+
+
+    // JUMP -----------------------------------------------------------------------
+
+    private void Jump()
+    {
+        if (isGrounded && Input.GetKeyDown(KeyCode.Space))
         {
-           fire.action.performed += FirePressed;
-           fire.action.Enable();
-        }
-        else
-        {
-            Debug.LogWarning("Fire InputActionReference is not assigned.");
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
     }
 
 
-    // Update is called once per frame
-    void Update()
+    // GRAVITY --------------------------------------------------------------------
+
+    private void Gravity()
     {
-        isGrounded = Physics.CheckSphere(transform.position, groundCheckDistance, groundCheckMask);
-
-        if (isGrounded && velocity.y < 0)
-        {
-            velocity.y = -2f;
-        }
-
-        //Rotation
-        float mouseX = mouseMovement.action.ReadValue<Vector2>().x * camSensitivity * Time.deltaTime;
-        float mouseY = mouseMovement.action.ReadValue<Vector2>().y * camSensitivity * Time.deltaTime;
-
-        rotationX -= mouseY;
-        rotationX = Mathf.Clamp(rotationX, -90f, 90f);
-        cam.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
-        transform.Rotate(Vector3.up * mouseX);
-
-        //Déplacement
-        Vector2 zqsdValue = zqsd.action.ReadValue<Vector2>();
-        Vector3 move = transform.TransformDirection(new Vector3(zqsdValue.x, 0, zqsdValue.y));
-        controller.Move(move * moveSensitivity * Time.deltaTime);
-
-        //Jump
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
-        {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-        }
-
-        //Gravité
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
+    }
+
+
+    // DEBUG (facultatif) ---------------------------------------------------------
+
+    private void OnDrawGizmosSelected()
+    {
+        if (groundCheckPoint == null) return;
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(groundCheckPoint.position, groundCheckRadius);
     }
 }
