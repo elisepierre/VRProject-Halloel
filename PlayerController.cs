@@ -53,16 +53,13 @@ public class PlayerController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
     }
 
+    public WeaponRaycast weapon;
+
     private void FirePressed(InputAction.CallbackContext obj)
     {
-        RaycastHit hit;
-        Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width / 2.0f, Screen.height / 2.0f, 0));
-
-        if (Physics.Raycast(ray, out hit))
-        {
-            Transform objectHit = hit.transform;
-        }
+        weapon.Shoot();
     }
+
 
     // Update is called once per frame
     void Update()
