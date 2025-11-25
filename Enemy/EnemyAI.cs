@@ -3,7 +3,7 @@ using UnityEngine;
 public class EnemyAI : MonoBehaviour
 {
     public Transform player;
-    public float speed = 3f;
+    public float speed = 2f;
 
     private void Update()
     {
