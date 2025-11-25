@@ -3,156 +3,89 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    [Header("Camera")]
-    [SerializeField] private Camera cam;
-
     [Header("Movement")]
-    [SerializeField] private float camSensitivity = 150f;
-    [SerializeField] private float moveSensitivity = 7f;
-    [SerializeField] private float gravity = -9.81f;
+    public float speed = 5f;
+    public float jumpHeight = 1.5f;
+    public float gravity = -9.81f;
 
-    [Header("Inputs")]
-    [SerializeField] private InputActionReference zqsd;
-    [SerializeField] private InputActionReference mouseMovement;
-    [SerializeField] private InputActionReference fire;
+    [Header("Camera")]
+    public Camera playerCamera;
+    public float mouseSensitivity = 200f;
 
-    [Header("Jump")]
-    [SerializeField] private float jumpHeight = 3f;
-
-    [Header("GroundCheck")]
-    [SerializeField] private Transform groundCheckPoint;
-    [SerializeField] private float groundCheckRadius = 0.3f;
-    [SerializeField] private LayerMask groundCheckMask;
-
-    private CharacterController controller;
-    private float rotationX = 0f;
-    private bool isGrounded = false;
-    private Vector3 velocity = Vector3.zero;
-
-    [Header("Weapon")]
+    [Header("Weapon (optional)")]
     public WeaponRaycast weapon;
 
+    private CharacterController controller;
+    private Vector3 velocity;
+    private float cameraPitch = 0f;
 
-    // INITIALISATION -------------------------------------------------------------
-
-    private void Awake()
+    void Start()
     {
         controller = GetComponent<CharacterController>();
+        if (controller == null)
+            Debug.LogError("⚠️ Player doit avoir un CharacterController !");
 
-        if (weapon == null)
-        {
-            weapon = GetComponentInChildren<WeaponRaycast>();
-            if (weapon == null)
-                Debug.LogWarning("⚠️ No WeaponRaycast found on player.");
-        }
-    }
-
-    private void Start()
-    {
-        // Enable Input System actions
-        if (zqsd) zqsd.action.Enable();
-        if (mouseMovement) mouseMovement.action.Enable();
-        if (fire)
-        {
-            fire.action.performed += FirePressed;
-            fire.action.Enable();
-        }
+        if (playerCamera == null)
+            Debug.LogWarning("⚠️ PlayerCamera n'est pas assignée dans l'inspector !");
 
         Cursor.lockState = CursorLockMode.Locked;
     }
 
-
-    // SHOOT ----------------------------------------------------------------------
-
-    private void FirePressed(InputAction.CallbackContext obj)
+    void Update()
     {
-        if (weapon != null)
-            weapon.Shoot();
+        MovePlayer();
+        CameraLook();
+        Shoot();
     }
 
-
-    // UPDATE ---------------------------------------------------------------------
-
-    private void Update()
+    // ------------------ MOUVEMENT + JUMP ------------------
+    private void MovePlayer()
     {
-        GroundCheck();
-        CameraRotation();
-        Movement();
-        Jump();
-        Gravity();
-    }
+        // Horizontal + Vertical
+        float h = Input.GetAxis("Horizontal"); // A/D ou Q/D
+        float v = Input.GetAxis("Vertical");   // W/S ou Z/S
 
+        Vector3 move = transform.right * h + transform.forward * v;
+        controller.Move(move * speed * Time.deltaTime);
 
-    // GROUND CHECK ---------------------------------------------------------------
+        // Jump
+        if (controller.isGrounded && velocity.y < 0)
+            velocity.y = -2f; // plaque au sol
 
-    private void GroundCheck()
-    {
-        isGrounded = Physics.CheckSphere(
-            groundCheckPoint.position,
-            groundCheckRadius,
-            groundCheckMask
-        );
-
-        if (isGrounded && velocity.y < 0)
-            velocity.y = -2f; // "stick to floor"
-    }
-
-
-    // CAMERA + MOUSE -------------------------------------------------------------
-
-    private void CameraRotation()
-    {
-        Vector2 mouse = mouseMovement.action.ReadValue<Vector2>();
-
-        float mouseX = mouse.x * camSensitivity * Time.deltaTime;
-        float mouseY = mouse.y * camSensitivity * Time.deltaTime;
-
-        rotationX -= mouseY;
-        rotationX = Mathf.Clamp(rotationX, -90f, 90f);
-
-        cam.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
-        transform.Rotate(Vector3.up * mouseX);
-    }
-
-
-    // MOVEMENT -------------------------------------------------------------------
-
-    private void Movement()
-    {
-        Vector2 input = zqsd.action.ReadValue<Vector2>();
-
-        Vector3 move = transform.TransformDirection(new Vector3(input.x, 0, input.y));
-        controller.Move(move * moveSensitivity * Time.deltaTime);
-    }
-
-
-    // JUMP -----------------------------------------------------------------------
-
-    private void Jump()
-    {
-        if (isGrounded && Input.GetKeyDown(KeyCode.Space))
+        if (controller.isGrounded && Input.GetKeyDown(KeyCode.Space))
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
-    }
 
-
-    // GRAVITY --------------------------------------------------------------------
-
-    private void Gravity()
-    {
+        // Gravité
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
 
-
-    // DEBUG (facultatif) ---------------------------------------------------------
-
-    private void OnDrawGizmosSelected()
+    // ------------------ ROTATION CAMERA ------------------
+    private void CameraLook()
     {
-        if (groundCheckPoint == null) return;
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
 
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(groundCheckPoint.position, groundCheckRadius);
+        // rotation horizontale du joueur
+        transform.Rotate(Vector3.up * mouseX);
+
+        // rotation verticale caméra
+        cameraPitch -= mouseY;
+        cameraPitch = Mathf.Clamp(cameraPitch, -85f, 85f);
+        if (playerCamera != null)
+            playerCamera.transform.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
+    }
+
+    // ------------------ SHOOT ------------------
+    private void Shoot()
+    {
+        if (weapon == null) return;
+
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            weapon.Shoot();
+        }
     }
 }
