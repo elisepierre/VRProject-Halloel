@@ -3,7 +3,7 @@ using UnityEngine;
 public class EnemySpawner : MonoBehaviour
 {
     public GameObject enemyPrefab;
-    public float spawnInterval = 2f;
+    public float spawnInterval = 4f;
     public Transform[] spawnPoints;
 
     private float timer;
@@ -42,6 +42,8 @@ public class EnemySpawner : MonoBehaviour
         int index = Random.Range(0, spawnPoints.Length);
 
         GameObject enemy = Instantiate(enemyPrefab, spawnPoints[index].position, Quaternion.identity);
+        EnemyAI ai = enemy.GetComponent<EnemyAI>();
+        if (ai != null) ai.player = player;
 
         enemy.GetComponent<EnemyAI>().player = player;
     }
