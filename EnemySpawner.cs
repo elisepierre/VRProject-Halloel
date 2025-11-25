@@ -3,22 +3,25 @@ using UnityEngine;
 public class EnemySpawner : MonoBehaviour
 {
     public GameObject enemyPrefab;
-    public float spawnInterval = 1f;
+    public float spawnInterval = 2f;
+    public Transform[] spawnPoints;
 
-    private Transform player;   // récupéré automatiquement
-    private Transform[] spawnPoints;
     private float timer;
+    private Transform player;
 
     void Start()
     {
-        // Trouver le joueur automatiquement
         player = GameObject.FindGameObjectWithTag("Player").transform;
 
-        spawnPoints = new Transform[4];
-        spawnPoints[0] = CreateSpawnPoint(new Vector3(-10, 1, -10));
-        spawnPoints[1] = CreateSpawnPoint(new Vector3(-10, 1, 10));
-        spawnPoints[2] = CreateSpawnPoint(new Vector3(10, 1, -10));
-        spawnPoints[3] = CreateSpawnPoint(new Vector3(10, 1, 10));
+        // Si aucun spawnpoint assigné dans l'inspecteur, on en génère 4 automatiquement
+        if (spawnPoints == null || spawnPoints.Length == 0)
+        {
+            spawnPoints = new Transform[4];
+            spawnPoints[0] = CreateSpawnPoint(new Vector3(-10, 1, -10));
+            spawnPoints[1] = CreateSpawnPoint(new Vector3(-10, 1, 10));
+            spawnPoints[2] = CreateSpawnPoint(new Vector3(10, 1, -10));
+            spawnPoints[3] = CreateSpawnPoint(new Vector3(10, 1, 10));
+        }
 
         timer = spawnInterval;
     }
@@ -27,32 +30,26 @@ public class EnemySpawner : MonoBehaviour
     {
         timer -= Time.deltaTime;
 
-        if (timer <= 0f)
+        if (timer <= 0)
         {
             SpawnEnemy();
             timer = spawnInterval;
         }
     }
 
-    private void SpawnEnemy()
+    void SpawnEnemy()
     {
         int index = Random.Range(0, spawnPoints.Length);
-        Transform spawnPoint = spawnPoints[index];
 
-        GameObject newEnemy = Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
+        GameObject enemy = Instantiate(enemyPrefab, spawnPoints[index].position, Quaternion.identity);
 
-        // Donner le player à l'ennemi
-        Enemy e = newEnemy.GetComponent<Enemy>();
-        if (e != null)
-        {
-            e.player = player;
-        }
+        enemy.GetComponent<EnemyAI>().player = player;
     }
 
-    private Transform CreateSpawnPoint(Vector3 position)
+    Transform CreateSpawnPoint(Vector3 pos)
     {
-        GameObject obj = new GameObject("SpawnPoint");
-        obj.transform.position = position;
-        return obj.transform;
+        GameObject go = new GameObject("SpawnPoint");
+        go.transform.position = pos;
+        return go.transform;
     }
 }
