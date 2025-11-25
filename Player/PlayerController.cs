@@ -23,10 +23,10 @@ public class PlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         if (controller == null)
-            Debug.LogError("⚠️ Player doit avoir un CharacterController !");
+            Debug.LogError("Player doit avoir un CharacterController !");
 
         if (playerCamera == null)
-            Debug.LogWarning("⚠️ PlayerCamera n'est pas assignée dans l'inspector !");
+            Debug.LogWarning("PlayerCamera n'est pas assignée dans l'inspector !");
 
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -89,3 +89,4 @@ public class PlayerController : MonoBehaviour
         }
     }
 }
+
