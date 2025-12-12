@@ -10,7 +10,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Camera")]
     public Camera playerCamera;
-    public float mouseSensitivity = 200f;
+    public float mouseSensitivity = 50f;
 
     [Header("Weapon (optional)")]
     public WeaponRaycast weapon;
@@ -22,12 +22,6 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
-        if (controller == null)
-            Debug.LogError("Player doit avoir un CharacterController !");
-
-        if (playerCamera == null)
-            Debug.LogWarning("PlayerCamera n'est pas assignée dans l'inspector !");
-
         Cursor.lockState = CursorLockMode.Locked;
     }
 
@@ -37,10 +31,20 @@ public class PlayerController : MonoBehaviour
         CameraLook();
         Shoot();
     }
+
     private void MovePlayer()
     {
-        float h = Input.GetAxis("Horizontal"); 
-        float v = Input.GetAxis("Vertical");
+        float h = 0f;
+        float v = 0f;
+
+        // NEW INPUT SYSTEM MOVEMENT
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.aKey.isPressed) h = -1;
+            if (Keyboard.current.dKey.isPressed) h = 1;
+            if (Keyboard.current.wKey.isPressed) v = 1;
+            if (Keyboard.current.sKey.isPressed) v = -1;
+        }
 
         Vector3 move = transform.right * h + transform.forward * v;
         controller.Move(move * speed * Time.deltaTime);
@@ -48,7 +52,8 @@ public class PlayerController : MonoBehaviour
         if (controller.isGrounded && velocity.y < 0)
             velocity.y = -2f;
 
-        if (controller.isGrounded && Input.GetKeyDown(KeyCode.Space))
+        // NEW INPUT SYSTEM JUMP
+        if (controller.isGrounded && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
@@ -59,8 +64,11 @@ public class PlayerController : MonoBehaviour
 
     private void CameraLook()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        if (Mouse.current == null) return;
+
+        // NEW INPUT SYSTEM MOUSE DELTA
+        float mouseX = Mouse.current.delta.x.ReadValue() * mouseSensitivity * Time.deltaTime;
+        float mouseY = Mouse.current.delta.y.ReadValue() * mouseSensitivity * Time.deltaTime;
 
         transform.Rotate(Vector3.up * mouseX);
 
@@ -77,11 +85,10 @@ public class PlayerController : MonoBehaviour
     {
         if (weapon == null) return;
 
-        if (Input.GetMouseButtonDown(0))
+        // NEW INPUT SYSTEM SHOOT
+        if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             weapon.Shoot();
         }
     }
-
 }
-

@@ -4,7 +4,10 @@ using UnityEngine.UI;
 
 public class EnemySpawner : MonoBehaviour
 {
-    public GameObject enemyPrefab;
+    [Header("Enemy Prefabs")]
+    public GameObject[] enemyPrefabs; // Tableau de prefabs
+
+    [Header("Spawn Settings")]
     public float spawnInterval = 4f;
     public float minDistanceFromPlayer = 5f;
     public float maxDistanceFromPlayer = 20f;
@@ -31,7 +34,10 @@ public class EnemySpawner : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        if (enemyPrefab == null || player == null) return;
+        if (enemyPrefabs == null || enemyPrefabs.Length == 0 || player == null) return;
+
+        // Choisir un prefab aléatoire
+        GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
 
         Vector3 spawnPos = Vector3.zero;
         bool found = false;
@@ -60,12 +66,11 @@ public class EnemySpawner : MonoBehaviour
             return;
         }
 
-        GameObject enemyObj = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+        GameObject enemyObj = Instantiate(prefab, spawnPos, Quaternion.identity);
 
         Enemy ai = enemyObj.GetComponent<Enemy>();
         if (ai != null) ai.player = player;
 
-        Debug.Log("Enemy spawned on NavMesh at: " + spawnPos);
+        Debug.Log("Enemy spawned on NavMesh at: " + spawnPos + " using prefab: " + prefab.name);
     }
 }
-
