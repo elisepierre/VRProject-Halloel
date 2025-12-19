@@ -8,6 +8,8 @@ public class WeaponRaycast : MonoBehaviour
     public LineRenderer lineRenderer;
     public float lineDuration = 0.05f;
 
+    public float damage = 1f;
+
     private float lineTimer = 0f;
 
     private void Update()
@@ -41,9 +43,14 @@ public class WeaponRaycast : MonoBehaviour
         if (Physics.Raycast(ray, out hit, range))
         {
             lineRenderer.SetPosition(1, hit.point);
+
             EnemyHealth eh = hit.collider.GetComponentInParent<EnemyHealth>();
             if (eh != null)
-                eh.TakeDamage(1f / 3f);
+                eh.TakeDamage(damage / 3f);
+
+            BossHealth bh = hit.collider.GetComponentInParent<BossHealth>();
+            if (bh != null)
+                bh.TakeDamage(damage);
         }
         else
         {

@@ -16,6 +16,10 @@ public class PlayerHealth : MonoBehaviour
     public float contactDamage = 5f;
     public float contactInterval = 2f;
 
+    [Header("Menus")]
+    public GameObject deathScreenUI;
+    public GameObject gameScreenUI;
+
     private Dictionary<Collider, float> contactTimers = new Dictionary<Collider, float>();
 
     private void Start()
@@ -77,6 +81,7 @@ public class PlayerHealth : MonoBehaviour
 
     private void Die()
     {
-        Destroy(gameObject);
+        deathScreenUI.SetActive(true);
+        gameScreenUI.SetActive(false);
     }
 }

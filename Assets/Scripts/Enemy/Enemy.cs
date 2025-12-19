@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -22,6 +23,11 @@ public class Enemy : MonoBehaviour
     private float stunTimer = 0f;
     private Rigidbody rb;
 
+    private GhostTutorial tutorial;
+
+
+    public static List<Enemy> allEnemies = new List<Enemy>();
+
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -33,19 +39,42 @@ public class Enemy : MonoBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotation;
 
         lastY = transform.position.y;
+        allEnemies.Add(this);
+    }
+
+    private void OnDestroy()
+    {
+        allEnemies.Remove(this);
     }
 
     private void Start()
     {
+        tutorial = FindFirstObjectByType<GhostTutorial>();
+
         if (!agent.isOnNavMesh)
         {
-            Debug.LogError("Ennemi spawn hors NavMesh ! Vérifie ton terrain et NavMesh.");
+            Debug.LogError("Ennemi spawn hors NavMesh !");
             enabled = false;
         }
     }
 
     private void Update()
     {
+        if (tutorial != null && tutorial.temporaryMessageActive)
+        {
+            if (agent != null && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+            return;
+        }
+        else
+        {
+            if (agent != null && agent.isOnNavMesh)
+                agent.isStopped = false;
+        }
+
         if (isStunned)
         {
             stunTimer -= Time.deltaTime;
@@ -57,8 +86,6 @@ public class Enemy : MonoBehaviour
 
         if (player != null && agent.isOnNavMesh)
             agent.SetDestination(player.position);
-
-        lastY = transform.position.y;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -66,7 +93,6 @@ public class Enemy : MonoBehaviour
         PlayerHealth ph = other.GetComponent<PlayerHealth>();
         if (ph != null)
         {
-            Debug.Log("Enemy touche le joueur !");
             ph.TakeDamage(contactDamage);
         }
     }
@@ -77,7 +103,14 @@ public class Enemy : MonoBehaviour
         stunTimer = duration;
         if (agent != null && agent.isOnNavMesh)
             agent.ResetPath();
+    }
 
-        Debug.Log(gameObject.name + " stun appliqué!");
+    public static void DestroyAllEnemies()
+    {
+        foreach (var e in new List<Enemy>(allEnemies))
+        {
+            if (e != null)
+                Destroy(e.gameObject);
+        }
     }
 }

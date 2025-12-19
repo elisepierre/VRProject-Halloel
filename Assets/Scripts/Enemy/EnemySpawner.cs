@@ -1,42 +1,60 @@
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.UI;
 
 public class EnemySpawner : MonoBehaviour
 {
-    [Header("Enemy Prefabs")]
-    public GameObject[] enemyPrefabs; // Tableau de prefabs
-
-    [Header("Spawn Settings")]
+    public GameObject[] enemyPrefabs;
     public float spawnInterval = 4f;
     public float minDistanceFromPlayer = 5f;
     public float maxDistanceFromPlayer = 20f;
 
-    private float timer;
     private Transform player;
+    private float timer;
+    private bool spawningActive = false;
 
-    private void Start()
+    private GhostTutorial tutorial;
+
+    void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
-        if (player == null) Debug.LogError("Player introuvable !");
+        tutorial = FindFirstObjectByType<GhostTutorial>();
         timer = spawnInterval;
+
+        if (player == null) Debug.LogError("Player introuvable !");
     }
 
-    private void Update()
+    void Update()
     {
+        if (!spawningActive)
+        {
+            return;
+        }
+
+        if (player == null) return;
+
+        if (tutorial != null && tutorial.temporaryMessageActive)
+            return;
+
         timer -= Time.deltaTime;
+
         if (timer <= 0f)
         {
-            SpawnEnemy();
-            timer = spawnInterval;
+            bool success = SpawnEnemy();
+            timer = success ? spawnInterval : 0f;
         }
     }
 
-    private void SpawnEnemy()
+    public void StartSpawning()
     {
-        if (enemyPrefabs == null || enemyPrefabs.Length == 0 || player == null) return;
+        spawningActive = true;
+        timer = spawnInterval;
+        Debug.Log("Spawning activé !");
+    }
 
-        // Choisir un prefab aléatoire
+    private bool SpawnEnemy()
+    {
+        if (enemyPrefabs == null || enemyPrefabs.Length == 0) return false;
+
         GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
 
         Vector3 spawnPos = Vector3.zero;
@@ -50,8 +68,7 @@ public class EnemySpawner : MonoBehaviour
             Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * distance;
             Vector3 candidatePos = player.position + offset;
 
-            NavMeshHit hit;
-            if (NavMesh.SamplePosition(candidatePos, out hit, 3f, NavMesh.AllAreas))
+            if (NavMesh.SamplePosition(candidatePos, out NavMeshHit hit, 3f, NavMesh.AllAreas))
             {
                 spawnPos = hit.position;
                 found = true;
@@ -62,15 +79,28 @@ public class EnemySpawner : MonoBehaviour
 
         if (!found)
         {
-            Debug.LogWarning("Impossible de trouver un spawn valide sur le NavMesh !");
-            return;
+            Debug.LogWarning("Spawn échoué, retry immédiat");
+            return false;
         }
 
         GameObject enemyObj = Instantiate(prefab, spawnPos, Quaternion.identity);
-
         Enemy ai = enemyObj.GetComponent<Enemy>();
         if (ai != null) ai.player = player;
 
-        Debug.Log("Enemy spawned on NavMesh at: " + spawnPos + " using prefab: " + prefab.name);
+        Debug.Log("Enemy spawné à : " + spawnPos);
+        return true;
+    }
+
+    public void SetSpawnInterval(float newInterval)
+    {
+        spawnInterval = newInterval;
+        timer = spawnInterval;
+        Debug.Log("Nouvel intervalle de spawn : " + spawnInterval);
+    }
+
+    public void StopSpawning()
+    {
+        spawningActive = false;
+        Debug.Log("Spawning désactivé !");
     }
 }
